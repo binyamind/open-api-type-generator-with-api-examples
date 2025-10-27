@@ -1,0 +1,1 @@
+# open-api-type-generator-with-api-examples
