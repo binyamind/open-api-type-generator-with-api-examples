@@ -1,0 +1,23 @@
+{
+  "name": "openapi-code-generator",
+  "version": "1.0.0",
+  "main": "src/server.ts",
+  "scripts": {
+    "start:dev": "NODE_ENV=development nodemon --watch src -e ts,json",
+    "generate-models": "docker run --rm -v $(pwd):/app openapitools/openapi-generator-cli generate -i /app/src/contracts/contract.swagger.yaml -g typescript-nestjs -o /app/src --global-property models --additional-properties=modelPropertyNaming=original,enumPropertyNaming=UPPERCASE,enumNameSuffix=\"\",supportsES6=true,withInterfaces=true,fileNaming=camelCase,sortParamsByRequiredFlag=true,sortModelPropertiesByRequiredFlag=true",
+    "generate-index": "node scripts/generateIndex.js",
+    "move-models": "mkdir -p ./src/models && find ./src/model -maxdepth 1 -type f -name \"*.ts\" -exec mv {} ./src/models/ \\; && rm -rf ./src/model",
+    "generate-all": "npm run generate-models  && npm run generate-index && npm run move-models",
+    "generate-axios":"docker run --rm -v $(pwd):/app openapitools/openapi-generator-cli generate -i /app/src/contracts/contract.swagger.yaml -g typescript-axios -o /app/src/axios "
+  },
+  "dependencies": {
+    "@types/express": "^5.0.1",
+    "express": "^5.1.0",
+    "express-openapi-validator": "^5.4.9"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.3"
+  }
+}

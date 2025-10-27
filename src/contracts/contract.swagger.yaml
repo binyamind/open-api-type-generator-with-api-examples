@@ -1,0 +1,497 @@
+openapi: 3.0.0
+info:
+  title: Test API
+  description: Test.
+  version: v1
+components:
+  securitySchemes:
+    jwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  requestBodies: 
+    CreateProduct:
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Product'
+              - type: object
+                properties:
+                  dateStamp:
+                    type: string
+                    format: date
+                required:
+                  - dateStamp
+      required: true
+    CreateUser: 
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/User'
+              - type: object
+                properties:
+                  dateStamp:
+                    type: string
+                    format: date
+                required:
+                  - dateStamp
+      required: true
+    UpdateProductBody:
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/Product'
+              - type: object
+                properties:
+                  dateStamp:
+                    type: string
+                    format: date
+                required:
+                  - dateStamp
+      required: true
+  parameters:
+      PathProductId:
+        name: id
+        description: The Id to use
+        required: true
+        in: path
+        schema:
+          type: string    
+  schemas:
+    PluginResponse:
+      type: object
+      properties:
+        result:
+          type: object
+        source:
+          example: Example Plugin
+          type: string
+      required:
+        - source
+        - result
+    PluginErrorResponse:
+      type: object
+      properties:
+        err:
+          type: string
+          example: Bad Request
+        data:
+          type: object
+      required:
+        - err
+        - data
+    SendError:
+      properties:
+        code:
+          example: 500
+          type: number
+        data:
+          type: object
+        message:
+          example: Internal Server Error
+          type: string
+        status:
+          example: error
+          type: string
+      required:
+        - status
+        - message
+        - code
+        - data
+      type: object
+    SendFail:
+      properties:
+        code:
+          example: 400
+          type: number
+        data:
+          type: object
+        message:
+          example: Bad request
+          type: string
+        status:
+          example: fail
+          type: string
+      required:
+        - status
+        - message
+        - code
+        - data
+      type: object
+    SendSuccess:
+      properties:
+        data:
+          type: object
+        status:
+          example: success
+          type: string
+      required:
+        - status
+        - data
+      type: object
+    CreateOrPutSuccessResponse: 
+      type: object
+      properties: 
+        id:
+          type: string
+          example: UUID  
+      required:
+       - id    
+    Items: 
+      type: object
+      properties:
+        products: 
+          type: array
+          items: 
+            $ref: '#/components/schemas/Product'
+      required:
+       - products     
+    Product: 
+      type: object
+      properties:
+        id:
+         type: string
+        title:
+         type: string
+         nullable: true
+        description:
+          type: string
+        imageUrl:
+          type: string
+          format: uri
+          example: https://cdn.example.com/products/1.jpg
+        price:   
+          type: number
+          format: float
+          minimum: 0.01
+          example: 19.99
+        productType: 
+          type: string
+          enum: 
+            - product_simple
+            - product_VIP  
+        test: 
+          type: string
+        name: 
+          type: number
+        myName: 
+          type: string 
+          enum:
+            - denis
+            - benjamin
+      required: 
+        - id
+        - imageUrl
+        - price
+        - productType
+        - name
+        - myName
+    Users: 
+      type: array 
+      items:
+        $ref: '#/components/schemas/User'
+    User: 
+      type: object
+      properties: 
+        name: 
+          type: string
+          example: Joe
+        email: 
+          type: string
+        gender: 
+          type: string
+          enum:
+            - male
+            - female
+            - binary
+      required: 
+        - name
+        - gender      
+  responses:
+    BadRequestError:
+      description: Bad Request Error
+      content:
+        application/json:
+          schema:
+            type: object
+    UnauthorizedError:
+      description: Unauthorized Error
+      content:
+        application/json:
+          schema:
+            type: object
+    NotFoundError:
+      description: Not Found Error
+      content:
+        application/json:
+          schema:
+            type: object
+    ConflictError:
+      description: Conflict Error
+      content:
+        application/json:
+          schema:
+            type: object
+    UnprocessableEntity:
+      description: Unprocessable Entity Error
+      content:
+        application/json:
+          schema:
+            type: object
+    InternalServerError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            type: object
+    SendBadRequestError:
+      description: Bad Request Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SendFail'
+    SendNotFoundError:
+      description: Not Found Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SendFail'
+    SendInternalServerError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/SendError' 
+paths:
+  /products:
+    get:
+      operationId: ProductsController_findAll
+      summary: Get all products.
+      description: Get products lists.
+      responses:
+        '200':
+          description: 2XX Response
+          content:
+            application/json:
+              schema:
+                title: ProductsSuccess
+                allOf:
+                  - $ref: '#/components/schemas/SendSuccess'
+                  - properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/PluginResponse'
+                          - properties:
+                              result:
+                                $ref: '#/components/schemas/Items'
+                            required:
+                              - result
+                    required:
+                      - data
+        '400':
+          $ref: '#/components/responses/SendBadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/SendInternalServerError'
+      tags:
+        - Products
+    post:
+      operationId: ProductsController_create
+      summary: Create a product.
+      description: Create a product.
+      requestBody:
+        $ref: '#/components/requestBodies/CreateProduct'
+      responses:
+        '201':
+          description: 2XX Response
+          content:
+            application/json:
+              schema:
+                title: CreateProductSuccess
+                allOf:
+                  - $ref: '#/components/schemas/SendSuccess'
+                  - properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/PluginResponse'
+                          - properties:
+                              result:
+                                $ref: '#/components/schemas/CreateOrPutSuccessResponse'
+                            required:
+                              - result
+                    required:
+                      - data
+        '400':
+          $ref: '#/components/responses/SendBadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/SendNotFoundError'
+        '500':
+          $ref: '#/components/responses/SendInternalServerError'
+      tags:
+        - Products
+  /products/{id}:
+    get:
+      operationId: ProductController_findOne
+      summary: Get a product by ID.
+      description:  Get a product by ID 
+      parameters:
+        - $ref: '#/components/parameters/PathProductId'
+      responses:
+        '200':
+          description: 2XX Response
+          content:
+            application/json:
+              schema:
+                title: ProductFindOneSuccess
+                allOf:
+                  - $ref: '#/components/schemas/SendSuccess'
+                  - properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/PluginResponse'
+                          - properties:
+                              result:
+                                $ref: '#/components/schemas/Product'
+                            required:
+                              - result
+                    required:
+                      - data
+        '400':
+          $ref: '#/components/responses/SendBadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/SendNotFoundError'
+        '500':
+          $ref: '#/components/responses/SendInternalServerError'
+      tags:
+        - Products
+    put:
+      operationId: ProductController_put
+      summary: Update a product by id.
+      description: >
+        updates a product. 
+      parameters:
+        - $ref: '#/components/parameters/PathProductId'
+      requestBody:
+        $ref: '#/components/requestBodies/UpdateProductBody'
+      responses:
+        '204':
+          description: 204 No Content
+        '400':
+          $ref: '#/components/responses/SendBadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/SendNotFoundError'
+        '500':
+          $ref: '#/components/responses/SendInternalServerError'
+      tags:
+        - Products
+    delete:
+      operationId: product_delete
+      summary: Delete a product by id.
+      description: Delete a product by id.
+      parameters:
+        - $ref: '#/components/parameters/PathProductId'
+        - name: type
+          description: type of product
+          required: true
+          in: query
+          schema: 
+            type: string 
+            enum: 
+              - product_simple
+              - product_VIP  
+      responses:
+        '204':
+          description: 204 No Content
+        '400':
+          $ref: '#/components/responses/SendBadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/SendNotFoundError'
+        '500':
+          $ref: '#/components/responses/SendInternalServerError'
+      tags:
+        - Products
+  /users:
+    get:
+      operationId: UsersController_findAll
+      summary: Get all users.
+      description: Get users.
+      responses:
+        '200':
+          description: 2XX Response
+          content:
+            application/json:
+              schema:
+                title: UsersSuccess
+                allOf:
+                  - $ref: '#/components/schemas/SendSuccess'
+                  - properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/PluginResponse'
+                          - properties:
+                              result:
+                                $ref: '#/components/schemas/Users'
+                            required:
+                              - result
+                    required:
+                      - data
+        '400':
+          $ref: '#/components/responses/SendBadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/SendInternalServerError'
+      tags:
+        - Users
+    post:
+      operationId: UsersController_create
+      summary: Create a user.
+      description: Create a user.
+      requestBody:
+        $ref: '#/components/requestBodies/CreateUser'
+      responses:
+        '201':
+          description: 2XX Response
+          content:
+            application/json:
+              schema:
+                title: CreateUserSuccess
+                allOf:
+                  - $ref: '#/components/schemas/SendSuccess'
+                  - properties:
+                      data:
+                        allOf:
+                          - $ref: '#/components/schemas/PluginResponse'
+                          - properties:
+                              result:
+                                $ref: '#/components/schemas/CreateOrPutSuccessResponse'
+                            required:
+                              - result
+                    required:
+                      - data
+        '400':
+          $ref: '#/components/responses/SendBadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/SendNotFoundError'
+        '500':
+          $ref: '#/components/responses/SendInternalServerError'
+      tags:
+        - Users    
+security:
+  - jwt: []
+servers: []
+tags: []
